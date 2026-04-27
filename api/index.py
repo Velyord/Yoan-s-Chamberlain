@@ -8,7 +8,6 @@ from config import EnvironmentConfig
 from infrastructure import OpenMeteoForecaster, GoogleSheetsLedger, TelegramSender
 from use_cases import InitiateQuestionnaireUseCase, AdvanceQuestionnaireUseCase, FinalizeRecordUseCase
 
-# 1. Configuration & Dependency Injection Wire-up
 app = Flask(__name__)
 config = EnvironmentConfig()
 
@@ -21,7 +20,6 @@ advance_use_case = AdvanceQuestionnaireUseCase(message_sender)
 finalize_use_case = FinalizeRecordUseCase(ledger, forecaster, message_sender, config.city_name)
 
 
-# 2. HTTP Routes (Delivery Mechanism)
 @app.route('/api/cron', methods=['GET'])
 def run_daily_cron():
     local_tz = pytz.timezone(config.timezone)
@@ -40,7 +38,6 @@ def telegram_webhook():
     return "OK", 200
 
 async def _handle_webhook_payload(update_data: dict):
-    # Telegram Bot instance here is solely for deserializing the Update object
     dummy_bot = Bot(token=config.bot_token)
     update = Update.de_json(update_data, dummy_bot)
     
