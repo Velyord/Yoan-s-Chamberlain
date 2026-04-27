@@ -2,6 +2,13 @@
 
 Всички забележителни промени в този проект ще бъдат документирани в този файл.
 
+### [1.0.3](https://github.com/Velyord/Yoan-s-Chamberlain/compare/v1.0.2...v1.0.3) (2026-04-27)
+
+
+### 🐛 Бъгове
+
+* change cron to daily for vercel hobby plan ([1442f8a](https://github.com/Velyord/Yoan-s-Chamberlain/commit/1442f8a243a028deb1f097035763699a9693b570))
+
 ### [1.0.2](https://github.com/Velyord/Yoan-s-Chamberlain/compare/v1.0.1...v1.0.2) (2026-04-27)
 
 
