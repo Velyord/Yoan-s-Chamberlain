@@ -2,6 +2,13 @@
 
 Всички забележителни промени в този проект ще бъдат документирани в този файл.
 
+### [1.0.4](https://github.com/Velyord/Yoan-s-Chamberlain/compare/v1.0.3...v1.0.4) (2026-04-27)
+
+
+### 🐛 Бъгове
+
+* refactor dependency injection for serverless event loop and handle telegram bad requests ([7730f67](https://github.com/Velyord/Yoan-s-Chamberlain/commit/7730f677fd9abe7f4a3848cb2ffc0c1ec7819b92))
+
 ### [1.0.3](https://github.com/Velyord/Yoan-s-Chamberlain/compare/v1.0.2...v1.0.3) (2026-04-27)
 
 
