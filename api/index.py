@@ -22,14 +22,8 @@ finalize_use_case = FinalizeRecordUseCase(ledger, forecaster, message_sender, co
 
 @app.route('/api/cron', methods=['GET'])
 def run_daily_cron():
-    local_tz = pytz.timezone(config.timezone)
-    now_local = datetime.datetime.now(local_tz)
-    
-    if now_local.hour == 20:
-        asyncio.run(initiate_use_case.execute())
-        return "Message sent!", 200
-        
-    return "Not the right time.", 200
+    asyncio.run(initiate_use_case.execute())
+    return "Message sent!", 200
 
 @app.route('/api/webhook', methods=['POST'])
 def telegram_webhook():
