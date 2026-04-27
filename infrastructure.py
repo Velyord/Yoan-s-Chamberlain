@@ -3,6 +3,7 @@ import gspread
 from datetime import date
 from typing import List
 from telegram import Bot, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram.error import BadRequest
 
 from domain import (
     WeatherForecaster, WardrobeLedger, MessageSender,
@@ -79,6 +80,7 @@ class TelegramSender(MessageSender):
             reply_markup = self._build_keyboard(options, "q") if options else None
             await self.bot.send_message(chat_id=self.chat_id, text=text, reply_markup=reply_markup, parse_mode="Markdown")
         except Exception as error:
+            print(f"Error sending message: {error}") # Log it instead of crashing
             raise MessagingError("Failed to send telegram message") from error
 
     async def edit_message(self, message_id: int, text: str, options: List[str], current_path: str) -> None:
@@ -87,17 +89,26 @@ class TelegramSender(MessageSender):
             await self.bot.edit_message_text(
                 chat_id=self.chat_id, message_id=message_id, text=text, reply_markup=reply_markup
             )
+        except BadRequest as e:
+            if "Message is not modified" in str(e):
+                return # Ignore this error, it's harmless
+            raise MessagingError("Telegram BadRequest") from e
         except Exception as error:
+            print(f"Error editing message: {error}")
             raise MessagingError("Failed to edit telegram message") from error
 
     async def finalize_message(self, message_id: int, text: str) -> None:
         try:
             await self.bot.edit_message_text(chat_id=self.chat_id, message_id=message_id, text=text)
+        except BadRequest as e:
+            if "Message is not modified" in str(e):
+                return
+            raise MessagingError("Telegram BadRequest") from e
         except Exception as error:
             raise MessagingError("Failed to finalize telegram message") from error
 
     def _build_keyboard(self, options: List[str], base_callback_data: str) -> InlineKeyboardMarkup:
-        keyboard =[]
+        keyboard = []
         for index, option in enumerate(options):
             callback_data = f"{base_callback_data}_{index}"
             keyboard.append([InlineKeyboardButton(option, callback_data=callback_data)])
