@@ -20,6 +20,7 @@ WARDROBE_CHOICES = {
 class WeatherForecast:
     min_temperature: int
     max_temperature: int
+    rain_probability: int
 
 @dataclass(frozen=True)
 class DailyAttire:

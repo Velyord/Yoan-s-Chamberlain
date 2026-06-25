@@ -26,7 +26,7 @@ class OpenMeteoForecaster(WeatherForecaster):
     def _build_api_url(self) -> str:
         return (f"https://api.open-meteo.com/v1/forecast"
                 f"?latitude={self.latitude}&longitude={self.longitude}"
-                f"&daily=temperature_2m_max,temperature_2m_min&timezone={self.timezone}")
+                f"&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone={self.timezone}")
 
     def _ensure_successful_response(self, response: requests.Response) -> None:
         if response.status_code != 200:
@@ -36,7 +36,8 @@ class OpenMeteoForecaster(WeatherForecaster):
         try:
             return WeatherForecast(
                 min_temperature=round(data['daily']['temperature_2m_min'][1]),
-                max_temperature=round(data['daily']['temperature_2m_max'][1])
+                max_temperature=round(data['daily']['temperature_2m_max'][1]),
+                rain_probability=round(data['daily']['precipitation_probability_max'][1])
             )
         except KeyError as error:
             raise WeatherFetchError("Malformed weather data received") from error
@@ -75,9 +76,9 @@ class TelegramSender(MessageSender):
         self.bot = Bot(token=bot_token)
         self.chat_id = chat_id
 
-    async def send_message(self, text: str, options: List[str] = None) -> None:
+    async def send_message(self, text: str, options: List[str] = None, base_callback_data: str = "q") -> None:
         try:
-            reply_markup = self._build_keyboard(options, "q") if options else None
+            reply_markup = self._build_keyboard(options, base_callback_data) if options else None
             await self.bot.send_message(chat_id=self.chat_id, text=text, reply_markup=reply_markup, parse_mode="Markdown")
         except Exception as error:
             print(f"Error sending message: {error}") # Log it instead of crashing

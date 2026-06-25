@@ -1,7 +1,7 @@
-from datetime import date
+from datetime import date, timedelta
 from domain import (
     WeatherForecaster, WardrobeLedger, MessageSender, 
-    DailyAttire, WARDROBE_CHOICES
+    DailyAttire, WARDROBE_CHOICES, WardrobeRecommendation
 )
 
 class InitiateQuestionnaireUseCase:
@@ -11,9 +11,9 @@ class InitiateQuestionnaireUseCase:
     async def execute(self) -> None:
         prompt = (
             "Forgive my intrusion, my Lord. I hope I do not disturb your rest. "
-            "Might your excellence be so kind as to share: what was the proper attire for your noble brow this day?"
+            "Did you follow my recommendation for today?"
         )
-        await self.message_sender.send_message(prompt, WARDROBE_CHOICES["head"])
+        await self.message_sender.send_message(prompt, ["Yes", "No"], base_callback_data="rec")
 
 class AdvanceQuestionnaireUseCase:
     def __init__(self, message_sender: MessageSender):
@@ -28,6 +28,10 @@ class AdvanceQuestionnaireUseCase:
             await self._ask_legs(message_id, callback_data)
         elif parts_count == 4:
             await self._ask_jacket(message_id, callback_data)
+
+    async def ask_headwear(self, message_id: int) -> None:
+        text = "Might your excellence be so kind as to share: what was the proper attire for your noble brow this day?"
+        await self.message_sender.edit_message(message_id, text, WARDROBE_CHOICES["head"], "q")
 
     async def _ask_torso(self, message_id: int, path: str) -> None:
         text = "A wise choice, Sire. And pray tell, what garment proved most suitable for your majestic torso?"
@@ -57,6 +61,22 @@ class FinalizeRecordUseCase:
         except Exception as error:
             await self.sender.send_message(f"Alas! An error occurred: {str(error)}")
 
+    async def execute_with_recommendation(self, message_id: int, today: date) -> None:
+        await self._acknowledge_completion(message_id)
+        
+        try:
+            raw_rec = self.ledger.fetch_recommendation()
+            resolved_rec = self._resolve_recommendation(raw_rec, today)
+            attire = DailyAttire(
+                headwear=resolved_rec.headwear,
+                torso=resolved_rec.torso,
+                legs=resolved_rec.legs,
+                jacket=resolved_rec.jacket
+            )
+            await self._process_ledger_and_forecast(attire, today)
+        except Exception as error:
+            await self.sender.send_message(f"Alas! An error occurred: {str(error)}")
+
     async def _acknowledge_completion(self, message_id: int) -> None:
         text = "Your wisdom is noted! I shall update the Royal Ledger and consult the heavens for tomorrow's omens..."
         await self.sender.finalize_message(message_id, text)
@@ -80,16 +100,60 @@ class FinalizeRecordUseCase:
         self.ledger.update_forecast(forecast)
         
         recommendation = self.ledger.fetch_recommendation()
-        report = self._format_report(forecast, recommendation)
+        tomorrow = today + timedelta(days=1)
+        resolved_recommendation = self._resolve_recommendation(recommendation, tomorrow)
+        
+        report = self._format_report(forecast, resolved_recommendation)
         
         await self.sender.send_message(report)
+
+    def _resolve_recommendation(self, recommendation: WardrobeRecommendation, target_date: date) -> WardrobeRecommendation:
+        is_fallback = (
+            recommendation.headwear not in WARDROBE_CHOICES["head"] or
+            recommendation.torso not in WARDROBE_CHOICES["torso"] or
+            recommendation.legs not in WARDROBE_CHOICES["legs"] or
+            recommendation.jacket not in WARDROBE_CHOICES["jacket"]
+        )
+        if not is_fallback:
+            return recommendation
+        
+        month = target_date.month
+        if month in (6, 7, 8):  # Summer
+            return WardrobeRecommendation(
+                headwear="none",
+                torso="short-sleeved shirt / t-shirt",
+                legs="short pants",
+                jacket="none"
+            )
+        elif month in (5, 9):  # Early Autumn & Late Spring
+            return WardrobeRecommendation(
+                headwear="none",
+                torso="light shirt / top",
+                legs="light pants",
+                jacket="suit jacket / top shirt"
+            )
+        elif month in (12, 1, 2):  # Winter
+            return WardrobeRecommendation(
+                headwear="winter hat",
+                torso="winter top",
+                legs="warm pants with tights",
+                jacket="winter jacket"
+            )
+        else:  # Late Autumn & Early Spring (3, 4, 10, 11)
+            return WardrobeRecommendation(
+                headwear="none",
+                torso="warm shirt / top",
+                legs="warm pants",
+                jacket="leather jacket"
+            )
 
     def _format_report(self, forecast, recommendation) -> str:
         return (
             f"✨ **The Royal Ledger has been updated, my Lord!**\n\n"
             f"I have peered into the horizon for tomorrow's omens in {self.city}:\n"
             f"❄️ **Min Temp:** {forecast.min_temperature}°C\n"
-            f"🔥 **Max Temp:** {forecast.max_temperature}°C\n\n"
+            f"🔥 **Max Temp:** {forecast.max_temperature}°C\n"
+            f"🌧️ **Rain Probability:** {forecast.rain_probability}%\n\n"
             f"📜 **According to the ancient scrolls, your ensemble shall be:**\n"
             f"👑 **Brow:** \t{recommendation.headwear}\n"
             f"🛡️ **Torso:** \t{recommendation.torso}\n"

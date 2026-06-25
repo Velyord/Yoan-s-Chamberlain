@@ -48,9 +48,16 @@ async def _handle_webhook_payload(update_data: dict):
         except BadRequest:
             pass # Ignore "Query is too old" errors
         
-        parts_count = len(query.data.split("_"))
-        if parts_count <= 4:
-            await advance_uc.execute(query.message.message_id, query.data)
-        else:
+        callback_data = query.data
+        if callback_data == "rec_0":
             today = datetime.datetime.now(pytz.timezone(config.timezone)).date()
-            await finalize_uc.execute(query.message.message_id, query.data, today)
+            await finalize_uc.execute_with_recommendation(query.message.message_id, today)
+        elif callback_data == "rec_1":
+            await advance_uc.ask_headwear(query.message.message_id)
+        else:
+            parts_count = len(callback_data.split("_"))
+            if parts_count <= 4:
+                await advance_uc.execute(query.message.message_id, callback_data)
+            else:
+                today = datetime.datetime.now(pytz.timezone(config.timezone)).date()
+                await finalize_uc.execute(query.message.message_id, callback_data, today)
