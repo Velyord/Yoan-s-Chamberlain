@@ -2,6 +2,18 @@
 
 Всички забележителни промени в този проект ще бъдат документирани в този файл.
 
+## [1.1.0](https://github.com/Velyord/Yoan-s-Chamberlain/compare/v1.0.4...v1.1.0) (2026-06-25)
+
+
+### 🚀 Новости
+
+* faster conversation and better, raining information, better advice when no data is available ([4c32306](https://github.com/Velyord/Yoan-s-Chamberlain/commit/4c32306deebff16afc1be1f2a958b9b1cf4e32a8))
+
+
+### 🔧 Поддръжка
+
+* better agent project understanding ([c5c916b](https://github.com/Velyord/Yoan-s-Chamberlain/commit/c5c916b372ca83884e9edeb3012e8d816d63f175))
+
 ### [1.0.4](https://github.com/Velyord/Yoan-s-Chamberlain/compare/v1.0.3...v1.0.4) (2026-04-27)
 
 
